@@ -53,7 +53,7 @@ public interface BluetoothLEListener extends BaseListener {
      * When data changed, the notification will send to here.
      * @param characteristic the characteristic
      */
-    void onDataChanged(BluetoothGattCharacteristic characteristic);
+    void onDataChanged(String value, BluetoothGattCharacteristic characteristic);
 
     /**
      * When a service is discovered, send the list of characteristics

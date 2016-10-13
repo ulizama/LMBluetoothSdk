@@ -7,7 +7,7 @@
     <ListView
         android:id="@+id/lv_ble_devices"
         android:layout_width="match_parent"
-        android:layout_height="150dp" />
+        android:layout_height="50dp" />
 
     <TextView
         android:id="@+id/tv_ble_conn_state"

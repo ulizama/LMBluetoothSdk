@@ -101,68 +101,66 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onDataChanged(final BluetoothGattCharacteristic characteristic) {
-
-            final String dataValue = characteristic.getStringValue(0);
-
+        public void onDataChanged(final String value, final BluetoothGattCharacteristic characteristic) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    tvContent.append( dataValue );
+                    tvContent.append("Change from " + characteristic.getUuid()
+                            + ": " + value + "\n");
                 }
             });
-        }
-
-        @Override
-        public void onActionStateChanged(int preState, int state) {
-            Log.d(TAG, "onActionStateChanged: " + state);
-        }
-
-        @Override
-        public void onActionDiscoveryStateChanged(String discoveryState) {
-            if (discoveryState.equals(BluetoothAdapter.ACTION_DISCOVERY_STARTED)) {
-                Toast.makeText(BleActivity.this, "scanning!", Toast.LENGTH_SHORT).show();
-            } else if (discoveryState.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)) {
-                Toast.makeText(BleActivity.this, "scan finished!", Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        @Override
-        public void onActionScanModeChanged(int preScanMode, int scanMode) {
-            Log.d(TAG, "onActionScanModeChanged:  " + scanMode);
-        }
-
-        @Override
-        public void onBluetoothServiceStateChanged(final int state) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    tvConnState.setText("Conn state: " + Utils.transConnStateAsString(state));
-                }
-            });
-        }
-
-        @Override
-        public void onActionDeviceFound(final BluetoothDevice device, short rssi) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mList.add(device.getName() + "@" + device.getAddress());
-                    mFoundAdapter.notifyDataSetChanged();
-                }
-            });
-        }
-    };
+    }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onActionStateChanged(int preState, int state) {
+        Log.d(TAG, "onActionStateChanged: " + state);
+    }
+
+    @Override
+    public void onActionDiscoveryStateChanged(String discoveryState) {
+        if (discoveryState.equals(BluetoothAdapter.ACTION_DISCOVERY_STARTED)) {
+            Toast.makeText(BleActivity.this, "scanning!", Toast.LENGTH_SHORT).show();
+        } else if (discoveryState.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)) {
+            Toast.makeText(BleActivity.this, "scan finished!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onActionScanModeChanged(int preScanMode, int scanMode) {
+        Log.d(TAG, "onActionScanModeChanged:  " + scanMode);
+    }
+
+    @Override
+    public void onBluetoothServiceStateChanged(final int state) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tvConnState.setText("Conn state: " + Utils.transConnStateAsString(state));
+            }
+        });
+    }
+
+    @Override
+    public void onActionDeviceFound(final BluetoothDevice device, short rssi) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mList.add(device.getName() + "@" + device.getAddress());
+                mFoundAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+};
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ble);
         getSupportActionBar().setTitle("BLE Sample");
         init();
-    }
+        }
 
-    private void init(){
+private void init(){
         mBLEController = BluetoothLEController.getInstance().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
 
@@ -185,69 +183,76 @@ public class BleActivity extends AppCompatActivity {
         mBLEController.setWriteCharacteristic(WRITE_CHARACTERISTIC_ID);
 
         btnScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mList.clear();
-                mFoundAdapter.notifyDataSetChanged();
+@Override
+public void onClick(View v) {
+        mList.clear();
+        mFoundAdapter.notifyDataSetChanged();
 
 //                if( mBLEController.startScan() ){
 //                    Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
 //                }
 
 //                You can scan by service using the following code:
-                List<UUID> uuids = new ArrayList<UUID>();
-                uuids.add(UUID.fromString(SERVICE_ID));
+        List<UUID> uuids = new ArrayList<UUID>();
+        uuids.add(UUID.fromString(SERVICE_ID));
 
-                if( mBLEController.startScanByService(uuids) ){
-                    Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
-                }
-            }
+        if( mBLEController.startScanByService(uuids) ){
+        Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
+        }
+        }
         });
         btnDisconnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mBLEController.disconnect();
-            }
+@Override
+public void onClick(View v) {
+        mBLEController.disconnect();
+        }
         });
         btnReconnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mBLEController.reConnect();
-            }
+@Override
+public void onClick(View v) {
+        mBLEController.reConnect();
+        }
         });
         btnSend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String msg = etSendContent.getText().toString();
-                if (!TextUtils.isEmpty(msg)) {
-                    mBLEController.write(msg.getBytes());
-                }
-            }
+@Override
+public void onClick(View v) {
+        String msg = etSendContent.getText().toString();
+        msg += "\\r\\n";
+        if (!TextUtils.isEmpty(msg)) {
+        mBLEController.write(msg.getBytes());
+        }
+        }
         });
         lvDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String itemStr = mList.get(position);
-                mBLEController.connect(itemStr.substring(itemStr.length() - 17));
+@Override
+public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        String itemStr = mList.get(position);
+        mBLEController.connect(itemStr.substring(itemStr.length() - 17));
 //                mBLEController.scheduleAlarm();
-            }
+        }
         });
 
         if (!mBLEController.isSupportBLE()){
-            Toast.makeText(BleActivity.this, "Unsupport BLE!", Toast.LENGTH_SHORT).show();
-            finish();
+        Toast.makeText(BleActivity.this, "Unsupport BLE!", Toast.LENGTH_SHORT).show();
+        finish();
         }
-    }
+        }
 
-    @Override
-    protected void onDestroy() {
+@Override
+protected void onDestroy() {
         super.onDestroy();
         mBLEController.release();
-    }
+        }
 
-    private String parseData(BluetoothGattCharacteristic characteristic){
+private String parseData(BluetoothGattCharacteristic characteristic){
 
-        String result = characteristic.getStringValue(0);
+        final byte[] data = characteristic.getValue();
+
+        String result = "";
+
+        if (data != null && data.length > 0) {
+            result = new String(data);
+        }
 
         //String result = "";
         // This is special handling for the Heart Rate Measurement profile.  Data parsing is
