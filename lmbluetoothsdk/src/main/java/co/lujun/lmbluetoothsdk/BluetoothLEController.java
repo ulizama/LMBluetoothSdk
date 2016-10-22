@@ -27,8 +27,7 @@
 package co.lujun.lmbluetoothsdk;
 
 import android.annotation.TargetApi;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -38,7 +37,6 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
@@ -53,7 +51,6 @@ import android.util.Log;
 import co.lujun.lmbluetoothsdk.base.Bluetooth;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import co.lujun.lmbluetoothsdk.base.State;
-import co.lujun.lmbluetoothsdk.receiver.AlarmReceiver;
 import co.lujun.lmbluetoothsdk.service.BluetoothLEService;
 
 /**
@@ -70,7 +67,6 @@ public class BluetoothLEController extends Bluetooth {
     private List<ScanFilter> mLeFilters;
     private Handler mHandler;
 
-    public Boolean shouldStartScan = true;
     public String SERVICE_ID = "";
     private Boolean isListenerSetup = false;
 
@@ -113,27 +109,6 @@ public class BluetoothLEController extends Bluetooth {
         return this;
     }
 
-    public void scheduleAlarm() {
-        Log.d("LMBluetoothSDK", "scheduleAlarm");
-        // Construct an intent that will execute the AlarmReceiver
-        Intent intent = new Intent(mContext, AlarmReceiver.class);
-
-        intent.putExtra("shouldStartScan", this.shouldStartScan);
-        intent.putExtra("SERVICE_ID", SERVICE_ID);
-
-        // Create a PendingIntent to be triggered when the alarm goes off
-        final PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
-
-        // Setup periodic alarm every 5 seconds
-        long firstMillis = System.currentTimeMillis(); // alarm is set right away
-        long intervalMillis = 10000;
-
-        AlarmManager alarm = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
-
-        alarm.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstMillis, intervalMillis, pendingIntent);
-        Log.d("LMBluetoothSDK", "after setInexactRepeating");
-    }
-
 
     /**
      * Set bluetooth listener, you can check all bluetooth status and read data with this listener's callback.
@@ -142,7 +117,7 @@ public class BluetoothLEController extends Bluetooth {
     public void setBluetoothListener(BluetoothLEListener listener){
         Log.d("LMBluetoothSdk", "[BluetoothLEController] - setBluetoothListener");
         this.mBluetoothListener = listener;
-//        registerReceiver();
+
         if (mBluetoothLEService != null) {
             Log.d("LMBluetoothSdk", "[BluetoothLEController] - setBluetoothListener - actually setting the listener");
             mBluetoothLEService.setBluetoothLEListener(mBluetoothListener);
@@ -164,7 +139,7 @@ public class BluetoothLEController extends Bluetooth {
      */
     @Override
     public boolean startScan() {
-        if (!isAvailable() && !isEnabled()){
+        if (!isBLEOn()){
             return false;
         }
         if (Build.VERSION.SDK_INT >= 21){
@@ -185,7 +160,7 @@ public class BluetoothLEController extends Bluetooth {
      */
     @Override
     public boolean startScanByService(List<UUID> serviceUUIDs) {
-        if (!isAvailable() && !isEnabled()){
+        if (!isBLEOn()){
             return false;
         }
         Log.d("LMBluetoothSDK", "startScanByService");
@@ -238,7 +213,7 @@ public class BluetoothLEController extends Bluetooth {
 
     @Override
     public boolean cancelScan() {
-        if (!isAvailable() && !isEnabled()){
+        if (!isBLEOn()){
             return false;
         }
         if (Build.VERSION.SDK_INT < 21) {

@@ -139,8 +139,9 @@ public class BluetoothLEService {
      * @param data data to send to the device
      */
     public void write(byte[] data){
-        if (mBluetoothGatt != null){
+        if (mBluetoothGatt != null && mWriteCharacteristic != null) {
             mWriteCharacteristic.setValue(data);
+            mWriteCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
             mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
         }
     }
@@ -157,7 +158,6 @@ public class BluetoothLEService {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             Log.d("LMBluetoothSdk", "[BluetoothLEService] - [onConnectionStateChange] -  status : " + status + " - newState : " + newState);
-//            super.onConnectionStateChange(gatt, status, newState);
             switch (newState){
                 case BluetoothProfile.STATE_CONNECTED:
                     setState(State.STATE_CONNECTED);
@@ -181,13 +181,18 @@ public class BluetoothLEService {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             Log.d("LMBluetoothSdk", "[BluetoothLEService] - [onServicesDiscovered] -  status : " + status);
-//            super.onServicesDiscovered(gatt, status);
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 List<BluetoothGattService> services = gatt.getServices();
 
                 Log.d("LMBluetoothSdk", "[BluetoothLEService] ------------------------------------------------------------------------------------------ ");
                 for (BluetoothGattService service : services) {
                     List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
+
+                    if (mBluetoothListener != null){
+                        ((BluetoothLEListener)mBluetoothListener).onDiscoveringCharacteristics(characteristics);
+                    }
+
                     for (BluetoothGattCharacteristic characteristic : characteristics) {
                         final int charaProp = characteristic.getProperties();
                         final String charaUUID = characteristic.getUuid().toString();
@@ -246,14 +251,19 @@ public class BluetoothLEService {
                     }
                 }
                 setState(State.STATE_GOT_CHARACTERISTICS);
+
+                if (mBluetoothListener != null){
+                    ((BluetoothLEListener)mBluetoothListener).onDiscoveringServices(services);
+                }
             }
 
             Log.d("LMBluetoothSdk", "[BluetoothLEService] ------------------------------------------------------------------------------------------ ");
+
+
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-//            super.onCharacteristicRead(gatt, characteristic, status);
             Log.d("LMBluetoothSdk", "[BluetoothLEService] - onCharacteristicRead - Characteristic : " + characteristic.getUuid() + " - status : " + status);
             if (mBluetoothListener != null){
                 ((BluetoothLEListener)mBluetoothListener).onReadData(characteristic);
@@ -262,7 +272,6 @@ public class BluetoothLEService {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-//            super.onCharacteristicWrite(gatt, characteristic, status);
             Log.d("LMBluetoothSdk", "[BluetoothLEService] - onCharacteristicWrite - Characteristic : " + characteristic.getUuid() + " -  status : " + status);
             if (mBluetoothListener != null){
                 ((BluetoothLEListener)mBluetoothListener).onWriteData(characteristic);
@@ -271,7 +280,6 @@ public class BluetoothLEService {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-//            super.onCharacteristicChanged(gatt, characteristic);
 
             final byte[] data = characteristic.getValue();
 

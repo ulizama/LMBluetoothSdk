@@ -124,6 +124,26 @@ public abstract class Bluetooth {
 
 
     /**
+     * Get status of the BLE
+     * @return true if BLE is enabled
+     */
+    public boolean isBLEOn(){
+
+        if( !isEnabled() ){
+            return false;
+        }
+
+        int state = getBluetoothState();
+
+        if( state == mBluetoothAdapter.STATE_ON ){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    /**
      * Set bluetooth discoverable with specified time.
      * @param time the time(unit seconds) of the device's bluetooth can be found
      * @return true if set discoverable operation success
